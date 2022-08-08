@@ -23,6 +23,8 @@ contract MultiSigWallet {
      */
     uint constant public MAX_OWNER_COUNT = 50;
 
+    uint constant public MAX_ETH_AMOUNT_FOR_TRANSACTION = 66e18;
+
     /*
      *  Storage
      */
@@ -88,6 +90,13 @@ contract MultiSigWallet {
             && _required <= ownerCount
             && _required != 0
             && ownerCount != 0);
+        _;
+    }
+    
+
+    //max 66ETH for transaction
+    modifier notExceededMaxAmount(uint txnAmount) {
+        require(txnAmount <= MAX_ETH_AMOUNT_FOR_TRANSACTION);
         _;
     }
 
@@ -230,7 +239,7 @@ contract MultiSigWallet {
         if (isConfirmed(transactionId)) {
             Transaction storage txn = transactions[transactionId];
             txn.executed = true;
-            if (external_call(txn.destination, txn.value, txn.data.length, txn.data))
+            if (notExceededMaxAmount(txn.value) && external_call(txn.destination, txn.value, txn.data.length, txn.data))
                 Execution(transactionId);
             else {
                 ExecutionFailure(transactionId);
